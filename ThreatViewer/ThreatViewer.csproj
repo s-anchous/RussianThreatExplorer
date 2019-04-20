@@ -70,6 +70,8 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Compile Include="BoolExtension.cs" />
+    <Compile Include="Change.cs" />
     <Compile Include="ExcelReader.cs" />
     <Compile Include="Threat.cs" />
     <Compile Include="ThreatContext.cs" />

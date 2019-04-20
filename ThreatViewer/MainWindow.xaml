@@ -150,7 +150,7 @@
                 <Grid.Effect>
                     <DropShadowEffect Direction="90" BlurRadius="5" ShadowDepth="0"/>
                 </Grid.Effect>
-                <Button x:Name="ThreatLayerOkButton" Margin="0,0,15,0" Content="Ок" Width="70" Height="30" Click="ThreatLayerOkButton_Click" HorizontalAlignment="Right"/>
+                <Button x:Name="ThreatLayerButton" Margin="0,0,15,0" Content="Ок" Width="70" Height="30" Click="ThreatLayerButton_Click" HorizontalAlignment="Right"/>
                 <Label x:Name="ThreatLayerStatusLabel" Margin="15,0,0,0" Padding="0,0,0,5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
             </Grid>
         </Grid>

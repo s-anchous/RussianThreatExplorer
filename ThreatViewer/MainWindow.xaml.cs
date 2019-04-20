@@ -17,41 +17,35 @@ using System.Windows.Shapes;
 
 namespace ThreatViewer
 {
+    public delegate void ButtonAction(); 
     /// <summary>
     /// Логика взаимодействия для MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window
     {
         private readonly ObservableCollection<Threat> _list = new ObservableCollection<Threat>();
-        private readonly ThreatContext db = new ThreatContext();
-        private int _pageCapacity = 15;
+        private readonly ThreatContext _db = new ThreatContext();
+        private int _pageCapacity = 20;
         private int _pageNumber = 0;
 
-        private bool _needUpdateDatebase;
-        private bool _showedAllChanges = true;
-        private Queue<Change> _changes;
+        ButtonAction messageButtonAction;
+        ButtonAction threatButtonAction;
 
-        private int StartThreatIndex => _pageNumber * _pageCapacity;
+        private bool _showedAllChanges;
+        private Queue<Change> _changes;
 
         public MainWindow()
         {
             InitializeComponent();
             ListOfThreats.ItemsSource = _list;
 
-            if (!db.Database.Exists())
-            {
-                _showedAllChanges = true;
-                _needUpdateDatebase = true;
-                ShowMessage("Здравствуйте", "На данный момент у программы отсутствует база данных угроз ФСТЭК России. Скачать её с официального сайта?", "Загрузить");
-                return;
-            }
-
-            SetPage(0);
+            if (!_db.Database.Exists()) FirstLaunch();
+            else SetPage(0);
         }
 
         private void SetPage(int page)
         {
-            if (page < 0 || page > db.Threats.Count() / _pageCapacity)
+            if (page < 0 || page > _db.Threats.Count() / _pageCapacity)
                 return;
 
             _pageNumber = page;
@@ -59,37 +53,37 @@ namespace ThreatViewer
 
             _list.Clear();
 
-            var nextPage = db.Threats.OrderBy(x => x.Number).Skip(StartThreatIndex).Take(_pageCapacity);
-            foreach (var item in nextPage)
+            int startIndex = _pageNumber * _pageCapacity;
+
+            var nextPageThreats = _db.Threats.OrderBy(x => x.Number).Skip(startIndex).Take(_pageCapacity);
+            foreach (var item in nextPageThreats)
             {
                 _list.Add(item);
             }
         }
 
-        private void MessageLayerButton_Click(object sender, RoutedEventArgs e)
+        private void FirstLaunch()
         {
-            if (_needUpdateDatebase) UpdateDatabaseAsync();
-            else HideMessage();
+            _showedAllChanges = true;
+            ShowMessage("Здравствуйте", "На данный момент у программы отсутствует база данных угроз ФСТЭК России. Скачать её с официального сайта?", UpdateDatabaseAsync, "Загрузить");
         }
 
         private async void UpdateDatabaseAsync()
         {
-            _needUpdateDatebase = true;
 
             LoadingLayer.Visibility = Visibility.Visible;
             try
             {
-                _changes = await Task.Run(db.Update);
+                _changes = await Task.Run(_db.TryUpdate);
             }
             catch (Exception e)
             {
                 // Ошибка загрузки БД
                 LoadingLayer.Visibility = Visibility.Collapsed;
-                ShowMessage("Ошибка", e.Message, "Повторить");
+                ShowMessage("Ошибка", e.Message, UpdateDatabaseAsync, "Повторить");
                 return;
             }
             LoadingLayer.Visibility = Visibility.Collapsed;
-            _needUpdateDatebase = false;
 
             SetPage(0);
             
@@ -98,22 +92,29 @@ namespace ThreatViewer
             {
                 _changes = null;
                 HideMessage();
-                return;
             }
-
             // Если изменений не было
-            if (_changes.Count == 0)
+            else if (_changes.Count == 0)
             {
                 _showedAllChanges = true;
-                ShowMessage("Обновление","Изменений не найдено");
+                ShowMessage("Обновление","Изменений не найдено", HideMessage);
             }
             // Если изменения есть
             else
             {
                 HideMessage();
-                _showedAllChanges = false;
-                ShowChangeThreat(_changes.Dequeue());
+                ShowNextChange();
+                threatButtonAction = ShowNextChange;
             }
+        }
+        private void ThreatLayerButton_Click(object sender, RoutedEventArgs e)
+        {
+            threatButtonAction?.Invoke();
+        }
+
+        private void MessageLayerButton_Click(object sender, RoutedEventArgs e)
+        {
+            messageButtonAction?.Invoke();
         }
 
         private void ToLeftPageButton_Click(object sender, RoutedEventArgs e)
@@ -126,18 +127,18 @@ namespace ThreatViewer
             SetPage(_pageNumber + 1);
         }
 
+        private void UpdateDataBase_Click(object sender, RoutedEventArgs e)
+        {
+            _showedAllChanges = false;
+            UpdateDatabaseAsync();
+        }
+
         private void ListOfThreats_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             if (!(ListOfThreats.SelectedItem is Threat item)) return;
-
-            ShowThreat(item);
-
-        }
-
-        private void ShowThreat(Threat t)
-        {
-            SetThreatToLayout(t);
-            ThreatLayer.Visibility = Visibility.Visible;
+            SetThreatToLayout(item);
+            ShowThreatLayer();
+            threatButtonAction = HideThreatLayer;
         }
 
         private void SetThreatToLayout(Threat t)
@@ -147,9 +148,9 @@ namespace ThreatViewer
             DiscriptionLabel.Text = t.Discription;
             SourceLabel.Text = t.Source;
             ObjectLabel.Text = t.Object;
-            IsPrivacyViolationLabel.Text = t.IsPrivacyViolation ? "Да" : "Нет";
-            IsIntegrityViolationLabel.Text = t.IsIntegrityViolation ? "Да" : "Нет";
-            IsAccessibilityViolationLabel.Text = t.IsAccessibilityViolation ? "Да" : "Нет";
+            IsPrivacyViolationLabel.Text = t.IsPrivacyViolation.MyToString();
+            IsIntegrityViolationLabel.Text = t.IsIntegrityViolation.MyToString();
+            IsAccessibilityViolationLabel.Text = t.IsAccessibilityViolation.MyToString();
         }
 
         private void ShowChangeThreat(Change change)
@@ -179,33 +180,28 @@ namespace ThreatViewer
                     break;
             }
 
-            ThreatLayer.Visibility = Visibility.Visible;
+            ShowThreatLayer();
         }
-
-        private void ThreatLayerOkButton_Click(object sender, RoutedEventArgs e)
+        private void ShowNextChange()
         {
-            if (!_showedAllChanges && _changes.Count > 0)
+            if (_changes.Count > 0)
             {
                 var change = _changes.Dequeue();
                 ShowChangeThreat(change);
-                return;
             }
-
-            ThreatLayer.Visibility = Visibility.Collapsed;
-            _showedAllChanges = true;
+            else
+            {
+                HideThreatLayer();
+            }
         }
 
-        private void ListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            var list = sender as ListView;
-            list?.UnselectAll();
-        }
-
-        private void ShowMessage(string title, string text, string buttonText = "Ок")
+        private void ShowMessage(string title, string text, ButtonAction action, string buttonText = "Ок")
         {
             MessageLayerTitle.Content = title;
             MessageLayerText.Text = text;
             MessageLayerButton.Content = buttonText;
+
+            messageButtonAction = action;
 
             MessageLayer.Visibility = Visibility.Visible;
         }
@@ -215,10 +211,14 @@ namespace ThreatViewer
             MessageLayer.Visibility = Visibility.Collapsed;
         }
 
-        private void UpdateDataBase_Click(object sender, RoutedEventArgs e)
+        public void ShowThreatLayer()
         {
-            _showedAllChanges = false;
-            UpdateDatabaseAsync();
+            ThreatLayer.Visibility = Visibility.Visible;
+        }
+
+        public void HideThreatLayer()
+        {
+            ThreatLayer.Visibility = Visibility.Collapsed;
         }
     }
 }
