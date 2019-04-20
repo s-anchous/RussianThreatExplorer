@@ -4,9 +4,172 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ThreatViewer"
+        xmlns:system="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        x:Name="thisWindow"
+        FontSize="16"
+        FontFamily="Century Gothic"
+        Title="MainWindow" Height="727.182" Width="624.768" Background="LightGray">
+    <Window.Resources>
+
+        <SolidColorBrush x:Key="MainColor" Color="Firebrick"/>
+
+        <Style x:Key="PageButton" BasedOn="{StaticResource {x:Type Button}}" TargetType="Button">
+            <Setter Property="Padding" Value="6"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+
+        <Style TargetType="Grid" x:Key="OpacityShowGrid">
+            <Style.Triggers>
+                <Trigger Property="Visibility" Value="Visible">
+                    <Trigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                         From="0.0" To="1.0" Duration="0:0:0.2"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </Trigger.EnterActions>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <DataTemplate x:Key="ThreatListItemTemplate">
+            <Grid Width="{Binding Path=ActualWidth, ElementName=WidthTemplate}">
+                <Border CornerRadius="5" Background="White" Margin="5" Padding="0, 15">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="90"/>
+                            <ColumnDefinition Width="2"/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+
+                        <Label Grid.Column="0" Content="{Binding FullNumber}" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Rectangle Grid.Column="1" VerticalAlignment="Stretch" Fill="LightGray"/>
+                        <TextBox Grid.Column="2" Text="{Binding Name}" HorizontalAlignment="Left" VerticalAlignment="Center" TextWrapping="Wrap" Margin="10, 0" BorderThickness="0" Background="Transparent" IsHitTestVisible="False"/>
+                    </Grid>
+                </Border>
+            </Grid>
+        </DataTemplate>
+
+        <Style TargetType="ListBoxItem" x:Key="ThreatListItemStyle">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <ContentPresenter/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+
+        <Style TargetType="ListBox" x:Key="ThreatList">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Hidden"/>
+            <Setter Property="ItemContainerStyle" Value="{StaticResource ThreatListItemStyle}"/>
+            <Setter Property="ItemTemplate" Value="{StaticResource ThreatListItemTemplate}"/>
+
+        </Style>
+
+    </Window.Resources>
     <Grid>
-        
+        <Grid x:Name="WidthTemplate" Margin="2"/>
+        <Grid>
+            <!--Основной слой-->
+            <Grid.RowDefinitions>
+                <RowDefinition Height="90"/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+
+            <ListBox x:Name="ListOfThreats" Grid.Row="1" Style="{StaticResource ThreatList}" MouseDoubleClick="ListOfThreats_MouseDoubleClick"/>
+
+            <Border Grid.Row="1" Background="{StaticResource MainColor}" CornerRadius="5" Height="28" Margin="15" VerticalAlignment="Bottom" HorizontalAlignment="Center" BorderThickness="1" BorderBrush="Black">
+                <WrapPanel Orientation="Horizontal">
+                    <Button x:Name="ToLeftPageButton" Click="ToLeftPageButton_Click" Style="{StaticResource PageButton}">
+                        <Image Source="Resources/arrow-left.png"/>
+                    </Button>
+                    <TextBox x:Name="PageLabel" Width="30" BorderThickness="0" HorizontalContentAlignment="Center">2</TextBox>
+                    <Button x:Name="ToRightPageButton" Click="ToRightPageButton_Click"  Style="{StaticResource PageButton}">
+                        <Image Source="Resources/arrow-right.png"/>
+                    </Button>
+                </WrapPanel>
+            </Border>
+
+            <Grid x:Name="MainPanel" Grid.Row="0" Background="{StaticResource MainColor}">
+                <Image Source="Resources/logo.png" HorizontalAlignment="Left" Margin="10,2,0,7"/>
+                <Label Content="Угрозы ФСТЭК России" VerticalAlignment="Center" Margin="100,0" Foreground="White" FontSize="28"/>
+                <Button Width="70" Height="70" HorizontalAlignment="Right" Margin="0,0,15,0" Click="UpdateDataBase_Click" Background="#30000000" Style="{StaticResource PageButton}">
+                    <Image Source="Resources/update.png"/>
+                </Button>
+            </Grid>
+        </Grid>
+        <Grid x:Name="ThreatLayer" Style="{StaticResource OpacityShowGrid}" Background="White" Visibility="Collapsed">
+            <!--Слой одной из угроз-->
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+                <RowDefinition Height="50"/>
+            </Grid.RowDefinitions>
+            <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Hidden">
+                <WrapPanel x:Name="ListOfValues" Orientation="Vertical" Margin="10,20">
+                    <WrapPanel.Resources>
+                        <Style TargetType="Label">
+                            <Setter Property="FontSize" Value="13"/>
+                            <Setter Property="FontWeight" Value="Bold"/>
+                            <Setter Property="IsHitTestVisible" Value="False"/>
+                        </Style>
+                        <Style TargetType="TextBox">
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="BorderThickness" Value="0"/>
+                            <Setter Property="FontSize" Value="12"/>
+                            <Setter Property="Margin" Value="7,0,0,0"/>
+                            <Setter Property="TextWrapping" Value="Wrap"/>
+                        </Style>
+                    </WrapPanel.Resources>
+
+                    <Label>Номер:</Label>
+                    <TextBox x:Name="NumberLabel"/>
+                    <Label>Название:</Label>
+                    <TextBox x:Name="NameLabel"/>
+                    <Label>Описание:</Label>
+                    <TextBox x:Name="DiscriptionLabel"/>
+                    <Label>Источник угрозы:</Label>
+                    <TextBox x:Name="SourceLabel"/>
+                    <Label>Объект воздействия:</Label>
+                    <TextBox x:Name="ObjectLabel"/>
+                    <Label>Нарушение конфиденциальности:</Label>
+                    <TextBox x:Name="IsPrivacyViolationLabel"/>
+                    <Label>Нарушение целостности:</Label>
+                    <TextBox x:Name="IsIntegrityViolationLabel"/>
+                    <Label>Нарушение доступности:</Label>
+                    <TextBox x:Name="IsAccessibilityViolationLabel"/>
+                </WrapPanel>
+            </ScrollViewer>
+            <Grid Grid.Row="1" Background="White">
+                <Grid.Effect>
+                    <DropShadowEffect Direction="90" BlurRadius="5" ShadowDepth="0"/>
+                </Grid.Effect>
+                <Button x:Name="ThreatLayerOkButton" Margin="0,0,15,0" Content="Ок" Width="70" Height="30" Click="ThreatLayerOkButton_Click" HorizontalAlignment="Right"/>
+                <Label x:Name="ThreatLayerStatusLabel" Margin="15,0,0,0" Padding="0,0,0,5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+            </Grid>
+        </Grid>
+        <Grid x:Name="MessageLayer" Background="White" Visibility="Collapsed">
+            <!--Слой приветствия-->
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+            <WrapPanel Grid.Row="1" Orientation="Vertical" HorizontalAlignment="Center">
+                <Label x:Name="MessageLayerTitle" HorizontalAlignment="Center" FontSize="30"/>
+                <TextBox x:Name="MessageLayerText" Background="Transparent" BorderThickness="0" VerticalAlignment="Center" HorizontalContentAlignment="Center" TextWrapping="Wrap" Margin="15"/>
+                <Button x:Name="MessageLayerButton" Height="40" Width="120" VerticalAlignment="Bottom" Click="MessageLayerButton_Click"/>
+            </WrapPanel>
+        </Grid>
+        <Grid x:Name="LoadingLayer" Style="{StaticResource OpacityShowGrid}" Background="#99000000" Visibility="Collapsed">
+            <!--Слой обновления базы данных-->
+            <Label Content="Загрузка" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="20" Foreground="White"/>
+        </Grid>
     </Grid>
 </Window>
