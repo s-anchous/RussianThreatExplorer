@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace ThreatViewer.Properties
+namespace RussianThreatExplorer.Properties
 {
 
 

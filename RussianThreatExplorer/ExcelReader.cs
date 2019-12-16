@@ -3,7 +3,7 @@ using System;
 using System.Data;
 using System.IO;
 
-namespace ThreatViewer
+namespace RussianThreatExplorer
 {
     class ExcelReader : IDisposable
     {
@@ -33,8 +33,24 @@ namespace ThreatViewer
 
         public T TryRead<T>(int row, int col)
         {
-            try { return (T)_table.Rows[row][col]; }
-            catch { return default(T); }
+	        try
+	        {
+		        object result = (T) _table.Rows[row][col];
+
+		        if (result is string text)
+			        result = ReplaceInvalidSymbols(text);
+
+		        return (T) result;
+	        }
+	        catch
+	        {
+		        return default(T);
+	        }
+        }
+
+        private static string ReplaceInvalidSymbols(string text)
+        {
+	        return text.Replace("_x000d_", "");
         }
 
         public void Dispose()

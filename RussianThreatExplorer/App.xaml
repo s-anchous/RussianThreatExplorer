@@ -1,7 +1,7 @@
-﻿<Application x:Class="ThreatViewer.App"
+﻿<Application x:Class="RussianThreatExplorer.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:ThreatViewer"
+             xmlns:local="clr-namespace:RussianThreatExplorer"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
          <Style x:Key="FocusVisual">

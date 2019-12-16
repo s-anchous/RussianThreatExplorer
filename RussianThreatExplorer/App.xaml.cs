@@ -2,12 +2,12 @@
 using System.Windows;
 using System.IO;
 
-namespace ThreatViewer
+namespace RussianThreatExplorer
 {
 
     public partial class App : Application
     {
-        public static readonly string DataDirectory = @"C:\ProgramData\ThreatViewer";
+        public static readonly string DataDirectory = @"C:\ProgramData\RussianThreatExplorer";
 
         [STAThread]
         public static void Main()

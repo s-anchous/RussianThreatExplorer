@@ -10,7 +10,7 @@ using System.Diagnostics;
 using System.Threading;
 //using System.Runtime.InteropServices;
 
-namespace ThreatViewer
+namespace RussianThreatExplorer
 {
     class ThreatContext : DbContext
     {
